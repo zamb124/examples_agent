@@ -18,8 +18,8 @@ from .agents.essay_agent import EssayAgent
 from .agents.style_editor_agent import StyleEditorAgent
 
 
-class EssayPipelineAgentExecutor(AgentExecutor):
-    """Исполнитель для полного пайплайна написания и редактирования эссе"""
+class A2AEssayPipelineAgentExecutor(AgentExecutor):
+    """Универсальный агент-исполнитель для A2A Essay Pipeline."""
 
     def __init__(self):
         self.essay_agent = EssayAgent()
@@ -32,7 +32,7 @@ class EssayPipelineAgentExecutor(AgentExecutor):
         # Получаем текст из сообщения
         text = context.message.parts[0].root.text
 
-        # Определяем тип задачи по контексту или навыку
+        # Определяем тип операции на основе текста или контекста
         skill_id = getattr(context, "skill_id", None)
 
         # Статус работы
@@ -44,27 +44,30 @@ class EssayPipelineAgentExecutor(AgentExecutor):
         ))
 
         try:
-            if skill_id == "write_essay":
-                # Пишем эссе, затем редактируем стиль
+            if skill_id == "write_essay" or not skill_id:
+                # Пишем эссе и редактируем его (полный пайплайн)
                 essay_result = await self.essay_agent.write_essay(text)
                 style_result = await self.style_agent.edit_style(essay_result["essay"])
 
-                final_text = style_result["edited_text"]
-                response_message = f"Эссе на тему '{text}' написано и отредактировано:\n\n{final_text}"
+                response_message = (
+                    f"Эссе на тему '{text}' написано и отредактировано:\n\n"
+                    f"{style_result['edited_text']}"
+                )
 
             elif skill_id == "edit_style":
                 # Только редактируем стиль
                 style_result = await self.style_agent.edit_style(text)
-                final_text = style_result["edited_text"]
-                response_message = f"Текст отредактирован:\n\n{final_text}"
+                response_message = f"Текст отредактирован:\n\n{style_result['edited_text']}"
 
             else:
-                # По умолчанию считаем, что это тема для эссе
+                # По умолчанию полный пайплайн
                 essay_result = await self.essay_agent.write_essay(text)
                 style_result = await self.style_agent.edit_style(essay_result["essay"])
 
-                final_text = style_result["edited_text"]
-                response_message = f"Эссе на тему '{text}' написано и отредактировано:\n\n{final_text}"
+                response_message = (
+                    f"Эссе на тему '{text}' написано и отредактировано:\n\n"
+                    f"{style_result['edited_text']}"
+                )
 
             # Завершаем задачу
             await event_queue.put(Task(
@@ -79,6 +82,7 @@ class EssayPipelineAgentExecutor(AgentExecutor):
                     ),
                 ),
             ))
+
         except Exception as e:  # noqa: BLE001
             # Обрабатываем ошибку
             await event_queue.put(Task(
@@ -128,7 +132,7 @@ agent_card = AgentCard(
 )
 
 # Инициализация компонентов сервера
-agent_executor = EssayPipelineAgentExecutor()  # Основной агент для пайплайна
+agent_executor = A2AEssayPipelineAgentExecutor()
 task_store = InMemoryTaskStore()
 handler = DefaultRequestHandler(agent_executor, task_store)
 
