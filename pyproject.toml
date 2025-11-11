@@ -1,0 +1,36 @@
+[project]
+name = "a2a-essay-pipeline"
+version = "0.1.0"
+description = "A2A essay writing and editing pipeline with OpenAI"
+authors = [
+    {name = "Viktor Shved", email = "viktor.shved@example.com"}
+]
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "a2a-sdk[http-server]>=0.1.0",
+    "openai>=1.54.0",
+    "pydantic>=2.9.0",
+]
+requires-python = ">=3.10"
+readme = "README.md"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app", "client"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "YTT", "S", "BLE", "FBT", "B", "A", "COM", "C4", "DTZ", "T10", "DJ", "EM", "EXE", "FA", "ISC", "ICN", "G", "INP", "PIE", "T20", "PYI", "PT", "Q", "RSE", "RET", "SLF", "SLOT", "SIM", "TID", "TCH", "INT", "ARG", "PTH", "ERA", "PD", "PGH", "PL", "TRY", "FLY", "NPY", "AIR", "PERF", "FURB", "LOG", "RUF"]
+ignore = ["ERA001", "S101"]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.7.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
