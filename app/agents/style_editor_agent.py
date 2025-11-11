@@ -1,12 +1,13 @@
-import os
 
 from openai import AsyncOpenAI
+
+from ..config import OPENAI_API_KEY
 
 
 class StyleEditorAgent:
     def __init__(self):
         # Инициализация OpenAI клиента
-        self.client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        self.client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
     async def edit_style(self, text: str) -> dict:
         # Создание промпта для редактирования стиля текста

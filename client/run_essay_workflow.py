@@ -3,19 +3,18 @@
 A2A клиент для запуска рабочего процесса написания эссе.
 """
 import asyncio
-import os
+from pathlib import Path
 
-from a2a_sdk import A2AClient, TaskRequest
+from a2a.client import ClientFactory, create_text_message_object
+from a2a.types import TaskState
 
 
 async def main():
-    # Проверка наличия API ключа OpenAI
-    if not os.getenv("OPENAI_API_KEY"):
-        print("Ошибка: переменная окружения OPENAI_API_KEY не установлена")  # noqa: T201
+    # Проверка наличия файла конфигурации
+    config_path = Path(__file__).parent.parent / "config.json"
+    if not config_path.exists():
+        print("Ошибка: файл config.json не найден. Создайте его на основе config.json.example")  # noqa: T201
         return
-
-    # Создание A2A клиента
-    client = A2AClient()
 
     # Запрос темы эссе у пользователя  # noqa: RUF003
     topic = input("Введите тему эссе: ").strip()
@@ -23,22 +22,39 @@ async def main():
         print("Тема не указана")  # noqa: T201
         return
 
-    # Создание запроса к агенту-писателю эссе
-    request = TaskRequest(
-        agent_id="essay-writer-agent",
-        capability_id="write_essay",
-        parameters={"topic": topic},
-    )
-
-    print(f"Запрос эссе на тему: {topic}")  # noqa: T201
+    print("Подключение к A2A агенту...")  # noqa: T201
 
     try:
-        # Отправка задачи и получение результата
-        result = await client.send_task(request)
-        print("\nЭссе готово:")  # noqa: T201,RUF001
-        print("=" * 50)  # noqa: T201
-        print(result["essay"])  # noqa: T201
-        print("=" * 50)  # noqa: T201
+        # Подключение к A2A агенту
+        client = await ClientFactory.connect("http://localhost:8000")
+
+        # Создание текстового сообщения
+        message = create_text_message_object(content=topic)
+
+        print(f"Отправка запроса на тему: {topic}")  # noqa: T201
+
+        # Отправка сообщения и обработка ответа
+        async for event in client.send_message(message):
+            if isinstance(event, tuple):
+                task, update = event
+                if task.status.state == TaskState.completed:
+                    if task.status.message:
+                        response_text = task.status.message.parts[0].root.text
+                        print("\nЭссе готово:")  # noqa: T201
+                        print("=" * 50)  # noqa: T201
+                        print(response_text)  # noqa: T201
+                        print("=" * 50)  # noqa: T201
+                    break
+                if task.status.state == TaskState.failed:
+                    print(f"Ошибка выполнения задачи: {task.status.message}")  # noqa: T201
+                    break
+            else:
+                # Прямой ответ (не streaming)
+                print(f"Прямой ответ: {event.parts[0].root.text}")  # noqa: T201
+                break
+
+        await client.close()
+
     except Exception as e:  # noqa: BLE001
         print(f"Ошибка: {e}")  # noqa: T201
 

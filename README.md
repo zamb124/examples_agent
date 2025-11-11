@@ -27,11 +27,21 @@ uv sync
 
 ## Настройка
 
-Установите ваш ключ API OpenAI:
+1. Скопируйте пример конфигурации:
 
 ```bash
-export OPENAI_API_KEY="your-api-key-here"
+cp config.json.example config.json
 ```
+
+2. Отредактируйте `config.json` и укажите ваш ключ API OpenAI:
+
+```json
+{
+  "openai_api_key": "your-openai-api-key-here"
+}
+```
+
+**Важно:** Файл `config.json` добавлен в `.gitignore` и не будет коммититься в репозиторий.
 
 ## Запуск сервера
 
