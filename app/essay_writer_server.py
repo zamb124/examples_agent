@@ -89,7 +89,7 @@ class EssayWriterAgentExecutor(AgentExecutor):
 
 essay_writer_card = AgentCard(
     name="Essay Writer Agent",
-    description="Агент для написания эссе через OpenAI GPT-4",
+    description="Агент для написания эссе",
     url="http://localhost:8001",
     version="1.0.0",
     capabilities=AgentCapabilities(streaming=True),
