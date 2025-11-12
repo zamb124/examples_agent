@@ -1,19 +1,47 @@
 version: '3.8'
 
 services:
-  a2a-essay-agent:
+  essay-writer:
     build: .
+    container_name: essay-writer-agent
     ports:
-      - "8000:8000"
+      - "8001:8001"
     volumes:
-      # Монтируем config.json для возможности изменения API ключа
       - ./config.json:/app/config.json:ro
     environment:
       - PYTHONUNBUFFERED=1
+      - STYLE_EDITOR_URL=http://style-editor:8002
+    command: ["uv", "run", "python", "-m", "uvicorn", "app.essay_writer_server:app", "--host", "0.0.0.0", "--port", "8001"]
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/.well-known/agent-card.json"]
+      test: ["CMD", "curl", "-f", "http://localhost:8001/.well-known/agent-card.json"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    networks:
+      - a2a-network
+
+  style-editor:
+    build: .
+    container_name: style-editor-agent
+    ports:
+      - "8002:8002"
+    volumes:
+      - ./config.json:/app/config.json:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: ["uv", "run", "python", "-m", "uvicorn", "app.style_editor_server:app", "--host", "0.0.0.0", "--port", "8002"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/.well-known/agent-card.json"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - a2a-network
+
+networks:
+  a2a-network:
+    driver: bridge
